@@ -794,11 +794,65 @@ function exportPattern() {
         ctx.fillRect(0, 0, width, height);
     }
 
-    const wrappedTile = createWrappedTileCanvas();
-
     const tilesPerRow = Math.sqrt(tiles);
     const tileW = width / tilesPerRow;
     const tileH = height / tilesPerRow;
+
+    const multiplier = tileW / tileSize;
+
+    const wrappedTile = (function(){
+        const temp = document.createElement("canvas");
+        temp.width = tileW;
+        temp.height = tileW;
+
+        const ctx = temp.getContext("2d");
+        ctx.imageSmoothingQuality = "high";
+
+        if (currentBg) {
+            ctx.fillStyle = currentBg;
+            ctx.fillRect(0, 0, tileW, tileW);
+        }
+
+        const objects = canvas.getObjects();
+
+        const positions = [
+            [0, 0],
+            [tileSize, 0],
+            [-tileSize, 0],
+            [0, tileSize],
+            [0, -tileSize],
+            [tileSize, tileSize],
+            [-tileSize, -tileSize],
+            [tileSize, -tileSize],
+            [-tileSize, tileSize]
+        ];
+
+        objects.forEach(obj => {
+
+            const objCanvas = obj.toCanvasElement({
+                multiplier: multiplier
+            });
+
+            positions.forEach(([dx, dy]) => {
+                ctx.save();
+
+                const x = (obj.left + dx) * multiplier;
+                const y = (obj.top + dy) * multiplier;
+
+                ctx.translate(x, y);
+                ctx.rotate((obj.angle || 0) * Math.PI / 180);
+
+                const w = obj.width * obj.scaleX * multiplier;
+                const h = obj.height * obj.scaleY * multiplier;
+
+                ctx.drawImage(objCanvas, -w/2, -h/2, w, h);
+
+                ctx.restore();
+            });
+        });
+
+        return temp;
+    })();
 
     for (let x = 0; x < tilesPerRow; x++) {
         for (let y = 0; y < tilesPerRow; y++) {
