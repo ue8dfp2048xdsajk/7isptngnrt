@@ -7,7 +7,94 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js">
+// =======================
+// SAVE / LOAD PROJECT
+// =======================
+
+function saveProject() {
+    const data = {
+        objects: canvas.toJSON(),
+        background: currentBg,
+        exportWidth: document.getElementById("exportWidth").value,
+        exportHeight: document.getElementById("exportHeight").value,
+        tileCount: document.getElementById("tileCount").value
+    };
+
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "pattern-project.json";
+    link.click();
+}
+
+document.getElementById("loadProjectInput").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = JSON.parse(event.target.result);
+
+        canvas.loadFromJSON(data.objects, function() {
+            canvas.renderAll();
+            currentBg = data.background || null;
+            canvas.setBackgroundColor(currentBg, canvas.renderAll.bind(canvas));
+
+            document.getElementById("exportWidth").value = data.exportWidth || 4000;
+            document.getElementById("exportHeight").value = data.exportHeight || 4000;
+            document.getElementById("tileCount").value = data.tileCount || 4;
+
+            updatePreview();
+            drawEditorWrapping();
+        });
+    };
+
+    reader.readAsText(file);
+});
+
+
+// =======================
+// AUTO SAVE (localStorage)
+// =======================
+
+function autoSave() {
+    const data = {
+        objects: canvas.toJSON(),
+        background: currentBg,
+        exportWidth: document.getElementById("exportWidth").value,
+        exportHeight: document.getElementById("exportHeight").value,
+        tileCount: document.getElementById("tileCount").value
+    };
+    localStorage.setItem("pattern_autosave", JSON.stringify(data));
+}
+
+function loadAutoSave() {
+    const data = localStorage.getItem("pattern_autosave");
+    if (!data) return;
+
+    const parsed = JSON.parse(data);
+    canvas.loadFromJSON(parsed.objects, function() {
+        canvas.renderAll();
+        currentBg = parsed.background || null;
+        canvas.setBackgroundColor(currentBg, canvas.renderAll.bind(canvas));
+
+        document.getElementById("exportWidth").value = parsed.exportWidth || 4000;
+        document.getElementById("exportHeight").value = parsed.exportHeight || 4000;
+        document.getElementById("tileCount").value = parsed.tileCount || 4;
+
+        updatePreview();
+        drawEditorWrapping();
+    });
+}
+
+canvas.on('object:added', autoSave);
+canvas.on('object:modified', autoSave);
+canvas.on('object:removed', autoSave);
+
+window.addEventListener("load", loadAutoSave);
+
+</script>
 
 <style>
 * {
@@ -395,6 +482,7 @@ input[type="color"] {
                 <button onclick="duplicate()">Duplicate</button>
                 <button onclick="flipHorizontal()">Flip H</button>
                 <button onclick="flipVertical()">Flip V</button>
+                <button style="background: linear-gradient(135deg, #e53935 0%, #c62828 100%);" onclick="clearAllImages()">Clear All</button>
             </div>
         </div>
 
@@ -443,6 +531,12 @@ input[type="color"] {
             <div id="warning"></div>
 
             <button class="export-btn" onclick="exportPattern()">Export Pattern Sheet</button>
+<div class="button-group" style="margin-top:8px; display:flex;">
+    <button style="flex:1;" onclick="saveProject()">Save Project</button>
+    <button style="flex:1;" onclick="document.getElementById('loadProjectInput').click()">Load Project</button>
+    <input type="file" id="loadProjectInput" accept=".json" style="display:none;">
+</div>
+
         </div>
     </div>
 </div>
@@ -606,6 +700,14 @@ function flipVertical() {
     canvas.renderAll();
     updatePreview();
     drawEditorWrapping();
+}
+
+
+function clearAllImages() {
+    canvas.getObjects().forEach(obj => canvas.remove(obj));
+    updatePreview();
+    drawEditorWrapping();
+    showDropHint();
 }
 
 // =======================
@@ -867,6 +969,93 @@ function exportPattern() {
         link.click();
     });
 }
+
+
+// =======================
+// SAVE / LOAD PROJECT
+// =======================
+
+function saveProject() {
+    const data = {
+        objects: canvas.toJSON(),
+        background: currentBg,
+        exportWidth: document.getElementById("exportWidth").value,
+        exportHeight: document.getElementById("exportHeight").value,
+        tileCount: document.getElementById("tileCount").value
+    };
+
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "pattern-project.json";
+    link.click();
+}
+
+document.getElementById("loadProjectInput").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = JSON.parse(event.target.result);
+
+        canvas.loadFromJSON(data.objects, function() {
+            canvas.renderAll();
+            currentBg = data.background || null;
+            canvas.setBackgroundColor(currentBg, canvas.renderAll.bind(canvas));
+
+            document.getElementById("exportWidth").value = data.exportWidth || 4000;
+            document.getElementById("exportHeight").value = data.exportHeight || 4000;
+            document.getElementById("tileCount").value = data.tileCount || 4;
+
+            updatePreview();
+            drawEditorWrapping();
+        });
+    };
+
+    reader.readAsText(file);
+});
+
+
+// =======================
+// AUTO SAVE (localStorage)
+// =======================
+
+function autoSave() {
+    const data = {
+        objects: canvas.toJSON(),
+        background: currentBg,
+        exportWidth: document.getElementById("exportWidth").value,
+        exportHeight: document.getElementById("exportHeight").value,
+        tileCount: document.getElementById("tileCount").value
+    };
+    localStorage.setItem("pattern_autosave", JSON.stringify(data));
+}
+
+function loadAutoSave() {
+    const data = localStorage.getItem("pattern_autosave");
+    if (!data) return;
+
+    const parsed = JSON.parse(data);
+    canvas.loadFromJSON(parsed.objects, function() {
+        canvas.renderAll();
+        currentBg = parsed.background || null;
+        canvas.setBackgroundColor(currentBg, canvas.renderAll.bind(canvas));
+
+        document.getElementById("exportWidth").value = parsed.exportWidth || 4000;
+        document.getElementById("exportHeight").value = parsed.exportHeight || 4000;
+        document.getElementById("tileCount").value = parsed.tileCount || 4;
+
+        updatePreview();
+        drawEditorWrapping();
+    });
+}
+
+canvas.on('object:added', autoSave);
+canvas.on('object:modified', autoSave);
+canvas.on('object:removed', autoSave);
+
+window.addEventListener("load", loadAutoSave);
 
 </script>
 
